@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <application
         android:allowBackup="true"
@@ -19,7 +21,13 @@
             android:name=".ble.CheckInActivity"
             android:exported="false" />
         <activity
-            android:name=".ble.BleActivity"
+            android:name=".ble.BluetoothActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ble.BleScanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ble.DeviceDetailActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
