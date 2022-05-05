@@ -42,19 +42,18 @@ internal class BleScanAdapter(val bleList: ArrayList<ScanResult>, val clickListe
         }
     }
 
-    fun addResultToBleList(scanResult: ScanResult){
-        val indexOfResult = bleList.indexOfFirst {
+    fun addElement(scanResult : ScanResult) {
+        val indexOfResult = bleList.indexOfFirst{
             it.device.address == scanResult.device.address
         }
-        if(indexOfResult != -1) {
+        if (indexOfResult != -1) {
             bleList[indexOfResult] = scanResult
-            //  notifyItemChanged(indexOfResult)
-        } else {
+            notifyItemInserted(indexOfResult)
+        }
+        else{
             bleList.add(scanResult)
-            //  notifyItemInserted(bleList.size -1)
         }
     }
-
     override fun getItemCount(): Int {
         return bleList.size
     }

@@ -23,11 +23,10 @@ import java.util.*
 
 @SuppressLint("MissingPermission")
 class DeviceDetailActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityDeviceDetailBinding
     private var bluetoothGatt: BluetoothGatt? = null
     private var timer: Timer? = null
-    lateinit var checkInBtn : Button
+    private lateinit var adapter: BleServiceAdapter
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,15 +39,8 @@ class DeviceDetailActivity : AppCompatActivity() {
         Toast.makeText(this, device?.address, Toast.LENGTH_SHORT).show()
         binding.deviceName.text = device?.name ?: "Nom inconnu"
         binding.deviceStatus.text = getString(R.string.ble_device_disconnected)
-        binding.checkInBtn.isEnabled =false
 
         connectToDevice(device)
-
-        checkInBtn = findViewById(R.id.checkInBtn)
-        val checkIntent : Intent = Intent(this, CheckInActivity::class.java)
-        checkInBtn.setOnClickListener {
-            startActivity(checkIntent)
-        }
     }
 
     override fun onStop() {
@@ -73,19 +65,13 @@ class DeviceDetailActivity : AppCompatActivity() {
             when (newState) {
                 BluetoothGatt.STATE_CONNECTED -> {
                     gatt?.discoverServices()
-                    runOnUiThread { binding.deviceStatus.text = "Connected"
-                        checkInBtn.isEnabled = true
-
-                    }
-
+                    runOnUiThread { binding.deviceStatus.text = "Connected" }
                 }
                 BluetoothGatt.STATE_CONNECTING -> {
-                    runOnUiThread { binding.deviceStatus.text = "Connection..."
-                        checkInBtn.isEnabled =false }
+                    runOnUiThread { binding.deviceStatus.text = "Connection..." }
                 }
                 else -> {
-                    runOnUiThread { binding.deviceStatus.text = "No connection"
-                        checkInBtn.isEnabled =false }
+                    runOnUiThread { binding.deviceStatus.text = "No connection" }
                 }
             }
         }
@@ -94,7 +80,26 @@ class DeviceDetailActivity : AppCompatActivity() {
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             super.onServicesDiscovered(gatt, status)
 
+            val bleServices =
+                gatt?.services?.map { BleService(it.uuid.toString(), it.characteristics) }
+                    ?: arrayListOf()
+            runOnUiThread {
+                binding.serviceList.layoutManager = LinearLayoutManager(this@DeviceDetailActivity)
 
+                adapter = BleServiceAdapter(bleServices,
+                    this@DeviceDetailActivity,
+                    { characteristic -> gatt?.readCharacteristic(characteristic) },
+                    { characteristic -> writeIntoCharacteristic(gatt!!, characteristic) },
+                    { characteristic, enable ->
+                        toggleNotificationOnCharacteristic(
+                            gatt!!,
+                            characteristic,
+                            enable
+                        )
+                    }
+                )
+                binding.serviceList.adapter = adapter
+            }
 
             Log.d("BluetoothLeService", "onServicesDiscovered()")
             val gattServices: List<BluetoothGattService> = gatt!!.services
@@ -116,7 +121,8 @@ class DeviceDetailActivity : AppCompatActivity() {
         ) {
             super.onCharacteristicRead(gatt, characteristic, status)
             runOnUiThread {
-
+                adapter.updateFromChangedCharacteristic(characteristic)
+                adapter.notifyDataSetChanged()
             }
         }
 
@@ -181,4 +187,3 @@ class DeviceDetailActivity : AppCompatActivity() {
         }
     }
 }
-
